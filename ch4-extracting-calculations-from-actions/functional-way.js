@@ -9,27 +9,38 @@ Example:
  bump the cart over $20
 */
 
-let shopping_cart = []; // global variable
-let shopping_cart_total = 0; // global variable are mutable --> they are actions
-
 function add_item_to_cart(name, price) {
-  shopping_cart.push({ name, price });
-  calculate_cart_total();
+  let shopping_cart = add_item(shopping_cart, name, price);
+  calculate_cart_total(shopping_cart);
 }
 
-function calculate_cart_total() {
-  shopping_cart_total = shopping_cart.reduce(
-    (total, item) => total + item.price,
-    0
-  );
-
-  set_tax_dom(shopping_cart_total);
-  update_shipping_icons();
-  update_tax_dom();
+function add_item(cart, name, price) {
+  // copying a mutable object (in this case the shopping_cart array)
+  // before modifying --> this is a way to implement immutabilitys
+  let new_cart = cart.slice();
+  new_cart.push({ name, price });
+  return new_cart;
 }
 
-function update_tax_dom() {
-  set_tax_dom(shopping_cart_total * 0.1);
+function calculate_cart_total(cart) {
+  let total = calc_total(cart);
+
+  set_tax_dom(total);
+  update_shipping_icons(total);
+  update_tax_dom(total);
+}
+
+function calc_total(cart) {
+  return cart.reduce((acc, item) => acc + item.price, 0);
+}
+
+function update_tax_dom(total) {
+  let total_with_tax = total + calc_tax(total);
+  set_tax_dom(total_with_tax);
+}
+
+function calc_tax(total) {
+  return total * 0.1;
 }
 
 function set_tax_dom(total) {
@@ -40,16 +51,20 @@ function get_buy_buttons_dom() {
   return "Buy button";
 }
 
-function update_shipping_icons() {
+function update_shipping_icons(total) {
   let buy_buttons = get_buy_buttons_dom();
 
   for (let i = 0; i < buy_buttons.length; i++) {
     let button = buy_buttons[i];
     let item_price = button.getAttribute("data-price");
-    if (shopping_cart_total + item_price >= 20) {
+    if (is_shipping_free(total, item_price)) {
       button.innerHTML = "Show free shipping icon";
     } else {
       button.innerHTML = "Hide free shipping icon";
     }
+  }
+
+  function is_shipping_free(cart_total, item_price) {
+    return cart_total + item_price >= 20;
   }
 }
